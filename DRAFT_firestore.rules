@@ -1,0 +1,420 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // Global Hardened Helpers
+    // =========================================================================
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && (
+        request.auth.token.firebase.sign_in_provider == 'password' ||
+        request.auth.token.email_verified == true
+      );
+    }
+
+    function isBootstrapAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email == 'irwanoffice10@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrapAdmin() || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isActiveUser() {
+      return isVerifiedUser() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    // =========================================================================
+    // Entity Validation Blueprints
+    // =========================================================================
+    function isValidUserProfile(data, userId) {
+      return data is map &&
+        data.keys().hasAll([
+          'uid',
+          'email',
+          'displayName',
+          'role',
+          'status',
+          'createdAt',
+          'updatedAt',
+          'lastLoginAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'username',
+          'email',
+          'displayName',
+          'photoURL',
+          'role',
+          'status',
+          'createdAt',
+          'updatedAt',
+          'lastLoginAt'
+        ]) &&
+        data.uid is string &&
+        data.uid == userId &&
+        data.uid.size() >= 1 &&
+        data.uid.size() <= 128 &&
+        (!('username' in data) || (data.username is string && data.username.size() >= 1 && data.username.size() <= 64)) &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 320 &&
+        data.displayName is string &&
+        data.displayName.size() >= 1 &&
+        data.displayName.size() <= 150 &&
+        (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1024)) &&
+        data.role in ['admin', 'user'] &&
+        data.status in ['active', 'suspended'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp &&
+        data.lastLoginAt is timestamp;
+    }
+
+    function isValidAdminMarker(data, adminId) {
+      return data is map &&
+        data.keys().hasAll(['uid', 'email', 'grantedBy', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'grantedBy', 'createdAt']) &&
+        data.uid is string &&
+        data.uid == adminId &&
+        data.uid.size() >= 1 &&
+        data.uid.size() <= 128 &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 320 &&
+        data.grantedBy is string &&
+        data.grantedBy.size() >= 1 &&
+        data.grantedBy.size() <= 128 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidKopSurat(kop) {
+      return kop is map &&
+        kop.keys().hasAll([
+          'logoKiri',
+          'logoKanan',
+          'kopBaris1',
+          'kopBaris2',
+          'kopBaris3',
+          'namaSatuanPendidikan',
+          'kopBaris5',
+          'kopBaris6',
+          'kopLineStyles',
+          'namaKegiatan',
+          'tahunPelajaran',
+          'alokasiWaktu',
+          'tempatTanggal',
+          'jabatanKepalaSekolah',
+          'namaKepalaSekolah',
+          'nipKepalaSekolah',
+          'jabatanPenyusun',
+          'namaPenyusun',
+          'nipPenyusun'
+        ]) &&
+        kop.keys().hasOnly([
+          'logoKiri',
+          'logoKanan',
+          'logoKiriSize',
+          'logoKananSize',
+          'kopBaris1',
+          'kopBaris2',
+          'kopBaris3',
+          'namaSatuanPendidikan',
+          'kopBaris5',
+          'kopBaris6',
+          'kopFontSizes',
+          'kopLineStyles',
+          'namaKegiatan',
+          'tahunPelajaran',
+          'alokasiWaktu',
+          'tempatTanggal',
+          'jabatanKepalaSekolah',
+          'namaKepalaSekolah',
+          'nipKepalaSekolah',
+          'jabatanPenyusun',
+          'namaPenyusun',
+          'nipPenyusun'
+        ]) &&
+        kop.logoKiri is string && kop.logoKiri.size() <= 350000 &&
+        kop.logoKanan is string && kop.logoKanan.size() <= 350000 &&
+        (!('logoKiriSize' in kop) || (kop.logoKiriSize is number && kop.logoKiriSize >= 24 && kop.logoKiriSize <= 200)) &&
+        (!('logoKananSize' in kop) || (kop.logoKananSize is number && kop.logoKananSize >= 24 && kop.logoKananSize <= 200)) &&
+        kop.kopBaris1 is string && kop.kopBaris1.size() <= 300 &&
+        kop.kopBaris2 is string && kop.kopBaris2.size() <= 300 &&
+        kop.kopBaris3 is string && kop.kopBaris3.size() <= 300 &&
+        kop.namaSatuanPendidikan is string && kop.namaSatuanPendidikan.size() <= 300 &&
+        kop.kopBaris5 is string && kop.kopBaris5.size() <= 400 &&
+        kop.kopBaris6 is string && kop.kopBaris6.size() <= 400 &&
+        kop.kopLineStyles is map &&
+        (!('kopFontSizes' in kop) || kop.kopFontSizes is map) &&
+        kop.namaKegiatan is string && kop.namaKegiatan.size() <= 300 &&
+        kop.tahunPelajaran is string && kop.tahunPelajaran.size() <= 100 &&
+        kop.alokasiWaktu is string && kop.alokasiWaktu.size() <= 100 &&
+        kop.tempatTanggal is string && kop.tempatTanggal.size() <= 150 &&
+        kop.jabatanKepalaSekolah is string && kop.jabatanKepalaSekolah.size() <= 150 &&
+        kop.namaKepalaSekolah is string && kop.namaKepalaSekolah.size() <= 150 &&
+        kop.nipKepalaSekolah is string && kop.nipKepalaSekolah.size() <= 100 &&
+        kop.jabatanPenyusun is string && kop.jabatanPenyusun.size() <= 150 &&
+        kop.namaPenyusun is string && kop.namaPenyusun.size() <= 150 &&
+        kop.nipPenyusun is string && kop.nipPenyusun.size() <= 100;
+    }
+
+    function isValidPortalConfig(data) {
+      return data is map &&
+        data.keys().hasAll([
+          'aiProvider',
+          'aiModel',
+          'activeTheme',
+          'isDarkDefault',
+          'hasCustomKeys',
+          'kopSurat',
+          'updatedAt',
+          'updatedByUid',
+          'updatedByName'
+        ]) &&
+        data.keys().hasOnly([
+          'aiProvider',
+          'aiModel',
+          'activeTheme',
+          'isDarkDefault',
+          'hasCustomKeys',
+          'kopSurat',
+          'updatedAt',
+          'updatedByUid',
+          'updatedByName'
+        ]) &&
+        data.aiProvider in ['gemini', 'anthropic', 'openai'] &&
+        data.aiModel is string &&
+        data.aiModel.size() >= 1 &&
+        data.aiModel.size() <= 100 &&
+        data.activeTheme in ['nusantara', 'zamrud', 'mentari', 'angkasa', 'delima'] &&
+        data.isDarkDefault is bool &&
+        data.hasCustomKeys is map &&
+        data.hasCustomKeys.keys().hasAll(['gemini', 'anthropic', 'openai']) &&
+        data.hasCustomKeys.keys().hasOnly(['gemini', 'anthropic', 'openai']) &&
+        data.hasCustomKeys.gemini is bool &&
+        data.hasCustomKeys.anthropic is bool &&
+        data.hasCustomKeys.openai is bool &&
+        isValidKopSurat(data.kopSurat) &&
+        data.updatedAt is timestamp &&
+        data.updatedByUid is string &&
+        data.updatedByUid.size() >= 1 &&
+        data.updatedByUid.size() <= 128 &&
+        data.updatedByName is string &&
+        data.updatedByName.size() >= 1 &&
+        data.updatedByName.size() <= 150;
+    }
+
+    function isValidAdminSecrets(data) {
+      return data is map &&
+        data.keys().hasAll([
+          'geminiKey',
+          'anthropicKey',
+          'openaiKey',
+          'updatedAt',
+          'updatedByUid'
+        ]) &&
+        data.keys().hasOnly([
+          'geminiKey',
+          'anthropicKey',
+          'openaiKey',
+          'updatedAt',
+          'updatedByUid'
+        ]) &&
+        data.geminiKey is string && data.geminiKey.size() <= 512 &&
+        data.anthropicKey is string && data.anthropicKey.size() <= 512 &&
+        data.openaiKey is string && data.openaiKey.size() <= 512 &&
+        data.updatedAt is timestamp &&
+        data.updatedByUid is string &&
+        data.updatedByUid.size() >= 1 &&
+        data.updatedByUid.size() <= 128;
+    }
+
+    // =========================================================================
+    // Collection Rules
+    // =========================================================================
+
+    // Users collection: PII isolated to owner or Admin
+    match /users/{userId} {
+      allow get: if isVerifiedUser() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidUserProfile(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        incoming().lastLoginAt == request.time && (
+          isAdmin() ||
+          (
+            request.auth.uid == userId &&
+            incoming().email == request.auth.token.email &&
+            incoming().status == 'active' &&
+            (
+              (isBootstrapAdmin() && incoming().role == 'admin') ||
+              (!isBootstrapAdmin() && incoming().role == 'user')
+            )
+          )
+        );
+
+      allow update: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidUserProfile(incoming(), userId) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          (
+            isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'username',
+              'displayName',
+              'photoURL',
+              'email',
+              'role',
+              'status',
+              'updatedAt',
+              'lastLoginAt'
+            ]) &&
+            // Guard: Admin cannot self-demote or suspend themselves
+            !(request.auth.uid == userId && (incoming().role != 'admin' || incoming().status != 'active'))
+          ) ||
+          (
+            request.auth.uid == userId &&
+            existing().status == 'active' &&
+            incoming().role == existing().role &&
+            incoming().status == existing().status &&
+            incoming().email == existing().email &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'displayName',
+              'photoURL',
+              'lastLoginAt',
+              'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isAdmin() &&
+        request.auth.uid != userId;
+    }
+
+    // Admin role marker collection
+    match /admins/{adminId} {
+      allow get: if isVerifiedUser() && isValidId(adminId) && (request.auth.uid == adminId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isVerifiedUser() &&
+        isValidId(adminId) &&
+        isValidAdminMarker(incoming(), adminId) &&
+        incoming().createdAt == request.time &&
+        (
+          isAdmin() ||
+          (isBootstrapAdmin() && request.auth.uid == adminId && incoming().grantedBy == request.auth.uid)
+        );
+      allow update: if false;
+      allow delete: if isVerifiedUser() &&
+        isValidId(adminId) &&
+        isAdmin() &&
+        request.auth.uid != adminId;
+    }
+
+    // Centralized portal settings (Kop Surat, Theme, active AI provider/model)
+    match /portalSettings/{settingId} {
+      allow get: if isVerifiedUser() &&
+        isValidId(settingId) &&
+        settingId == 'global' &&
+        (isAdmin() || isActiveUser());
+      allow list: if isAdmin();
+      allow create: if isVerifiedUser() &&
+        isValidId(settingId) &&
+        settingId == 'global' &&
+        isValidPortalConfig(incoming()) &&
+        isAdmin() &&
+        incoming().updatedAt == request.time &&
+        incoming().updatedByUid == request.auth.uid;
+      allow update: if isVerifiedUser() &&
+        isValidId(settingId) &&
+        settingId == 'global' &&
+        isValidPortalConfig(incoming()) &&
+        isAdmin() &&
+        incoming().updatedAt == request.time &&
+        incoming().updatedByUid == request.auth.uid &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'aiProvider',
+          'aiModel',
+          'activeTheme',
+          'isDarkDefault',
+          'hasCustomKeys',
+          'kopSurat',
+          'updatedAt',
+          'updatedByUid',
+          'updatedByName'
+        ]);
+      allow delete: if false;
+    }
+
+    // Admin-only isolated API key secrets
+    match /adminSecrets/{secretId} {
+      allow get: if isVerifiedUser() &&
+        isValidId(secretId) &&
+        secretId == 'aiKeys' &&
+        isAdmin();
+      allow list: if false;
+      allow create: if isVerifiedUser() &&
+        isValidId(secretId) &&
+        secretId == 'aiKeys' &&
+        isValidAdminSecrets(incoming()) &&
+        isAdmin() &&
+        incoming().updatedAt == request.time &&
+        incoming().updatedByUid == request.auth.uid;
+      allow update: if isVerifiedUser() &&
+        isValidId(secretId) &&
+        secretId == 'aiKeys' &&
+        isValidAdminSecrets(incoming()) &&
+        isAdmin() &&
+        incoming().updatedAt == request.time &&
+        incoming().updatedByUid == request.auth.uid &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'geminiKey',
+          'anthropicKey',
+          'openaiKey',
+          'updatedAt',
+          'updatedByUid'
+        ]);
+      allow delete: if false;
+    }
+
+    // Health connection check doc
+    match /test/{docId} {
+      allow get: if isVerifiedUser() && docId == 'connection';
+      allow list, write: if false;
+    }
+  }
+}

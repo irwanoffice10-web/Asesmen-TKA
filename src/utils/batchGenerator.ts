@@ -1,5 +1,4 @@
 import {
-  ActiveFeatureTab,
   AiConfig,
   BatchProgressState,
   DifficultyLevel,
@@ -111,7 +110,7 @@ export function buildBatchPlan(
 }
 
 function resolveJenjangRules(
-  mode: ActiveFeatureTab,
+  mode: 'tka' | 'mapel',
   formState: TkaFormState | MapelFormState
 ): {
   levelLabel: string;
@@ -217,7 +216,7 @@ CATATAN FORMAT BENTUK SOAL:
 }
 
 function buildBatchUserPrompt(
-  mode: ActiveFeatureTab,
+  mode: 'tka' | 'mapel',
   formState: TkaFormState | MapelFormState,
   batch: BatchSlotPlan,
   totalRequested: number,
@@ -340,7 +339,7 @@ async function callAiGenerateEndpoint(
 }
 
 export interface RunSequentialGenerationParams {
-  mode: ActiveFeatureTab;
+  mode: 'tka' | 'mapel';
   formState: TkaFormState | MapelFormState;
   aiConfig: AiConfig;
   abortController: AbortController;

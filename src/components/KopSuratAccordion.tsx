@@ -30,6 +30,7 @@ interface KopSuratAccordionProps {
   config: KopSuratConfig;
   onChange: (next: KopSuratConfig) => void;
   onSchoolNameChange: (schoolName: string) => void;
+  alwaysExpanded?: boolean;
 }
 
 interface LineToolbarProps {
@@ -153,25 +154,62 @@ function getInlineCssStyle(s: KopLineStyle) {
   };
 }
 
+function compressImageFile(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      if (!result || file.type === 'image/svg+xml') {
+        resolve(result.slice(0, 340000));
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 320;
+        const scale = Math.min(1, maxDim / Math.max(img.width || 1, img.height || 1));
+        const width = Math.max(1, Math.round(img.width * scale));
+        const height = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(result.slice(0, 340000));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const pngData = canvas.toDataURL('image/png');
+        if (pngData.length <= 320000) {
+          resolve(pngData);
+        } else {
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        }
+      };
+      img.onerror = () => resolve(result.slice(0, 340000));
+      img.src = result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export function KopSuratAccordion({
   config,
   onChange,
   onSchoolNameChange,
+  alwaysExpanded = false,
 }: KopSuratAccordionProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(alwaysExpanded);
+  const showBody = alwaysExpanded || isExpanded;
 
   const handleImageUpload =
     (field: 'logoKiri' | 'logoKanan') =>
-    (e: ChangeEvent<HTMLInputElement>) => {
+    async (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          onChange({ ...config, [field]: reader.result });
-        }
-      };
-      reader.readAsDataURL(file);
+      const dataUrl = await compressImageFile(file);
+      if (dataUrl) {
+        onChange({ ...config, [field]: dataUrl });
+      }
       e.target.value = '';
     };
 
@@ -210,37 +248,43 @@ export function KopSuratAccordion({
 
   return (
     <section className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-sm overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setIsExpanded((prev) => !prev)}
-        className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
-      >
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="w-9 h-9 rounded-lg theme-gradient-bg text-white flex items-center justify-center shrink-0 shadow-sm">
-            <FileText className="w-4 h-4" />
+      {!alwaysExpanded && (
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-9 h-9 rounded-lg theme-gradient-bg text-white flex items-center justify-center shrink-0 shadow-sm">
+              <FileText className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+                Pengaturan Kop Surat &amp; Tanda Tangan Resmi
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                {config.namaSatuanPendidikan || 'Nama Satuan Pendidikan'} ·{' '}
+                {config.namaKegiatan || 'Identitas Naskah'} · Dikelola Admin
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
-              Pengaturan Kop Surat &amp; Tanda Tangan Resmi
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-              {config.namaSatuanPendidikan || 'Nama Satuan Pendidikan'} ·{' '}
-              {config.namaKegiatan || 'Identitas Naskah'} · Tersimpan otomatis
-            </p>
-          </div>
-        </div>
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold theme-accent-text shrink-0 whitespace-nowrap">
-          {isExpanded ? 'Tutup Pengaturan' : 'Atur Kop & Tanda Tangan'}
-          {isExpanded ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
-        </span>
-      </button>
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold theme-accent-text shrink-0 whitespace-nowrap">
+            {isExpanded ? 'Tutup Pengaturan' : 'Atur Kop & Tanda Tangan'}
+            {isExpanded ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </span>
+        </button>
+      )}
 
-      {isExpanded && (
-        <div className="px-5 pb-6 pt-2 border-t border-slate-200 dark:border-slate-800 space-y-6">
+      {showBody && (
+        <div
+          className={`px-5 pb-6 ${
+            alwaysExpanded ? 'pt-5' : 'pt-2 border-t border-slate-200 dark:border-slate-800'
+          } space-y-6`}
+        >
           {/* Live Preview of Kop Surat */}
           <div className="p-4 sm:p-5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
             <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-3">

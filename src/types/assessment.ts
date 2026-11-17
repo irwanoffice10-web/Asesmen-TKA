@@ -63,7 +63,7 @@ export interface KopSuratConfig {
   nipPenyusun: string;
 }
 
-export type ActiveFeatureTab = 'tka' | 'mapel';
+export type ActiveFeatureTab = 'tka' | 'mapel' | 'admin';
 export type ResultSubTab = 'editor' | 'kisikisi' | 'simulasi';
 
 export type QuestionCountOption = 5 | 10 | 25 | 50 | 75 | 100;
@@ -130,7 +130,7 @@ export interface BatchProgressState {
 }
 
 export interface AssessmentMetadata {
-  mode: ActiveFeatureTab;
+  mode: 'tka' | 'mapel';
   satuanPendidikan: string;
   judulAsesmen: string;
   subJudul: string;
@@ -151,3 +151,36 @@ export interface AppThemeMeta {
   subtitle: string;
   swatches: [string, string, string];
 }
+
+export type UserRole = 'admin' | 'user';
+export type UserStatus = 'active' | 'suspended';
+
+export interface PortalUserProfile {
+  uid: string;
+  username?: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  role: UserRole;
+  status: UserStatus;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+  lastLoginAt?: unknown;
+}
+
+export interface PortalSettingsState {
+  aiProvider: AiProvider;
+  aiModel: string;
+  activeTheme: AppThemeId;
+  isDarkDefault: boolean;
+  hasCustomKeys: {
+    gemini: boolean;
+    anthropic: boolean;
+    openai: boolean;
+  };
+  kopSurat: KopSuratConfig;
+  updatedAt?: unknown;
+  updatedByUid?: string;
+  updatedByName?: string;
+}
+

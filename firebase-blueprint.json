@@ -1,0 +1,259 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Profil pengguna portal (Admin atau User / Guru) beserta status akses dan role RBAC.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID milik pengguna."
+        },
+        "username": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9._\\-]+$",
+          "description": "Username pengguna untuk login satu pintu."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 320,
+          "description": "Alamat email pengguna."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150,
+          "description": "Nama tampilan pengguna."
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 1024,
+          "description": "URL foto profil pengguna."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "user"],
+          "description": "Peran akses pengguna pada portal."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "suspended"],
+          "description": "Status aktif akun pengguna."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu pembuatan profil pengguna."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu pembaruan terakhir profil pengguna."
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu login terakhir pengguna."
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "displayName",
+        "role",
+        "status",
+        "createdAt",
+        "updatedAt",
+        "lastLoginAt"
+      ]
+    },
+    "AdminRoleMarker": {
+      "title": "AdminRoleMarker",
+      "description": "Dokumen penanda hak akses Admin untuk verifikasi RBAC O(1) di Firestore Security Rules.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID pengguna dengan peran Admin."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 320,
+          "description": "Email Admin."
+        },
+        "grantedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID Admin yang memberikan hak akses."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu pemberian peran Admin."
+        }
+      },
+      "required": ["uid", "email", "grantedBy", "createdAt"]
+    },
+    "PortalConfig": {
+      "title": "PortalConfig",
+      "description": "Konfigurasi terpusat portal (Kop Surat, Tema Warna, Mode Gelap, serta Provider & Model AI aktif) yang dikelola sepenuhnya oleh Admin.",
+      "type": "object",
+      "properties": {
+        "aiProvider": {
+          "type": "string",
+          "enum": ["gemini", "anthropic", "openai"],
+          "description": "Penyedia layanan AI aktif."
+        },
+        "aiModel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Model AI aktif."
+        },
+        "activeTheme": {
+          "type": "string",
+          "enum": ["nusantara", "zamrud", "mentari", "angkasa", "delima"],
+          "description": "Palet tema warna portal."
+        },
+        "isDarkDefault": {
+          "type": "boolean",
+          "description": "Pengaturan mode gelap default portal."
+        },
+        "hasCustomKeys": {
+          "type": "object",
+          "description": "Penanda boolean ketersediaan kunci API kustom per penyedia."
+        },
+        "kopSurat": {
+          "type": "object",
+          "description": "Konfigurasi Kop Surat 6 baris, logo kiri/kanan, dan blok tanda tangan resmi."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu pembaruan konfigurasi."
+        },
+        "updatedByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID Admin yang memperbarui."
+        },
+        "updatedByName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150,
+          "description": "Nama Admin yang memperbarui."
+        }
+      },
+      "required": [
+        "aiProvider",
+        "aiModel",
+        "activeTheme",
+        "isDarkDefault",
+        "hasCustomKeys",
+        "kopSurat",
+        "updatedAt",
+        "updatedByUid",
+        "updatedByName"
+      ]
+    },
+    "AdminAiSecrets": {
+      "title": "AdminAiSecrets",
+      "description": "Penyimpanan terisolasi kunci API Multi-AI yang hanya dapat dibaca dan diubah oleh Admin.",
+      "type": "object",
+      "properties": {
+        "geminiKey": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Kunci API kustom Gemini."
+        },
+        "anthropicKey": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Kunci API Anthropic Claude."
+        },
+        "openaiKey": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Kunci API OpenAI ChatGPT."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu pembaruan kunci API."
+        },
+        "updatedByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID Admin yang memperbarui kunci."
+        }
+      },
+      "required": [
+        "geminiKey",
+        "anthropicKey",
+        "openaiKey",
+        "updatedAt",
+        "updatedByUid"
+      ]
+    },
+    "TestConnection": {
+      "title": "TestConnection",
+      "description": "Dokumen uji koneksi Firestore saat startup aplikasi.",
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Koleksi profil pengguna portal berdasarkan UID Firebase Authentication."
+    },
+    "/admins/{adminId}": {
+      "schema": {
+        "$ref": "#/entities/AdminRoleMarker"
+      },
+      "description": "Koleksi penanda peran Admin untuk pemeriksaan otorisasi Firestore."
+    },
+    "/portalSettings/{settingId}": {
+      "schema": {
+        "$ref": "#/entities/PortalConfig"
+      },
+      "description": "Pengaturan portal terpusat (Kop Surat, Tema, Model AI) pada dokumen global."
+    },
+    "/adminSecrets/{secretId}": {
+      "schema": {
+        "$ref": "#/entities/AdminAiSecrets"
+      },
+      "description": "Kunci API rahasia Multi-AI yang hanya dapat diakses oleh Admin."
+    },
+    "/test/{docId}": {
+      "schema": {
+        "$ref": "#/entities/TestConnection"
+      },
+      "description": "Dokumen uji konektivitas Firestore awal."
+    }
+  }
+}
