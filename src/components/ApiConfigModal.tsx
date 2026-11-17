@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { CheckCircle2, Eye, EyeOff, KeyRound, X, AlertTriangle } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Loader2,
+  Wifi,
+  X,
+} from 'lucide-react';
 import { AI_PROVIDER_OPTIONS } from '../data/curriculumData';
 import { AiConfig, AiProvider } from '../types/assessment';
 
@@ -19,6 +28,11 @@ export function ApiConfigModal({
   hasServerGeminiKey,
 }: ApiConfigModalProps) {
   const [showKey, setShowKey] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    ok: boolean;
+    message: string;
+  } | null>(null);
 
   if (!isOpen) return null;
 
@@ -28,6 +42,7 @@ export function ApiConfigModal({
 
   const handleSelectProvider = (provider: AiProvider) => {
     const providerMeta = AI_PROVIDER_OPTIONS.find((p) => p.id === provider)!;
+    setTestResult(null);
     onChangeConfig({
       ...aiConfig,
       provider,
@@ -36,6 +51,7 @@ export function ApiConfigModal({
   };
 
   const handleModelChange = (model: string) => {
+    setTestResult(null);
     onChangeConfig({
       ...aiConfig,
       model,
@@ -43,6 +59,7 @@ export function ApiConfigModal({
   };
 
   const handleKeyChange = (value: string) => {
+    setTestResult(null);
     onChangeConfig({
       ...aiConfig,
       keys: {
@@ -50,6 +67,44 @@ export function ApiConfigModal({
         [aiConfig.provider]: value,
       },
     });
+  };
+
+  const handleTestConnection = async () => {
+    setTestingConnection(true);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: aiConfig.provider,
+          model: aiConfig.model,
+          apiKey: aiConfig.keys[aiConfig.provider] || '',
+        }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || `Gagal terhubung (${res.status}).`);
+      }
+      setTestResult({
+        ok: true,
+        message: data.message || 'Koneksi API aktif dan siap digunakan.',
+      });
+    } catch (err) {
+      setTestResult({
+        ok: false,
+        message:
+          err instanceof Error
+            ? err.message
+            : 'Gagal menguji koneksi ke penyedia AI.',
+      });
+    } finally {
+      setTestingConnection(false);
+    }
   };
 
   const currentKey = aiConfig.keys[aiConfig.provider] || '';
@@ -105,7 +160,7 @@ export function ApiConfigModal({
               ) : (
                 <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               )}
-              <div className="text-sm">
+              <div className="text-sm flex-1">
                 <div className="font-semibold text-slate-900 dark:text-slate-100">
                   {isConnected
                     ? `Koneksi Siap: ${selectedProviderMeta.name} (${aiConfig.model})`
@@ -118,6 +173,38 @@ export function ApiConfigModal({
                       : 'Menggunakan konfigurasi Google Gemini bawaan sistem secara otomatis.'
                     : 'Masukkan API Key pada kolom di bawah ini untuk mengaktifkan penyedia AI pilihan Anda.'}
                 </p>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={testingConnection || !isConnected}
+                    onClick={handleTestConnection}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 disabled:opacity-50 cursor-pointer transition-colors"
+                  >
+                    {testingConnection ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Wifi className="w-3.5 h-3.5 theme-accent-text" />
+                    )}
+                    <span>
+                      {testingConnection
+                        ? 'Menguji Koneksi...'
+                        : 'Uji Koneksi API'}
+                    </span>
+                  </button>
+                </div>
+
+                {testResult && (
+                  <p
+                    className={`text-xs font-medium mt-2 ${
+                      testResult.ok
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-rose-600 dark:text-rose-400'
+                    }`}
+                  >
+                    {testResult.message}
+                  </p>
+                )}
               </div>
             </div>
           </div>

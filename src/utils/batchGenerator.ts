@@ -320,7 +320,18 @@ async function callAiGenerateEndpoint(
 
   const data = (await res.json()) as { rawText?: string; error?: string };
   if (!res.ok) {
-    throw new Error(data.error || `Gagal memanggil AI API (${res.status}).`);
+    const err = new Error(
+      data.error || `Gagal memanggil AI API (${res.status}).`
+    ) as Error & { nonRetryable?: boolean };
+    if (
+      res.status === 400 ||
+      res.status === 401 ||
+      res.status === 403 ||
+      res.status === 404
+    ) {
+      err.nonRetryable = true;
+    }
+    throw err;
   }
   if (!data.rawText) {
     throw new Error('Server mengembalikan respons teks kosong.');
@@ -454,6 +465,9 @@ export async function runSequentialBatchGeneration({
           return;
         }
         lastError = err;
+        if ((err as Error & { nonRetryable?: boolean }).nonRetryable) {
+          break;
+        }
       }
     }
 
