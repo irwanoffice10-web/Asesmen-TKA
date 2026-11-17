@@ -1,0 +1,225 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-serif: 'Source Serif 4', Georgia, Cambria, serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    /* Default Theme: Samudra Nusantara */
+    --theme-primary: #0284c7;
+    --theme-primary-hover: #0369a1;
+    --theme-secondary: #4f46e5;
+    --theme-tertiary: #f59e0b;
+    --theme-soft-bg: rgba(224, 242, 254, 0.55);
+    --theme-soft-border: rgba(56, 189, 248, 0.45);
+    --theme-text: #0369a1;
+    --canvas-bg: radial-gradient(circle at 12% 8%, rgba(56, 189, 248, 0.14), transparent 38%),
+      radial-gradient(circle at 88% 14%, rgba(99, 102, 241, 0.12), transparent 36%),
+      radial-gradient(circle at 75% 88%, rgba(245, 158, 11, 0.09), transparent 40%),
+      #f6f9fc;
+  }
+
+  :root[data-theme="zamrud"] {
+    --theme-primary: #059669;
+    --theme-primary-hover: #047857;
+    --theme-secondary: #0d9488;
+    --theme-tertiary: #eab308;
+    --theme-soft-bg: rgba(209, 250, 229, 0.55);
+    --theme-soft-border: rgba(52, 211, 153, 0.48);
+    --theme-text: #047857;
+    --canvas-bg: radial-gradient(circle at 10% 8%, rgba(16, 185, 129, 0.15), transparent 38%),
+      radial-gradient(circle at 88% 16%, rgba(20, 184, 166, 0.12), transparent 36%),
+      radial-gradient(circle at 72% 86%, rgba(234, 179, 8, 0.09), transparent 40%),
+      #f4fbf8;
+  }
+
+  :root[data-theme="mentari"] {
+    --theme-primary: #ea580c;
+    --theme-primary-hover: #c2410c;
+    --theme-secondary: #e11d48;
+    --theme-tertiary: #7c3aed;
+    --theme-soft-bg: rgba(255, 237, 213, 0.65);
+    --theme-soft-border: rgba(251, 146, 60, 0.5);
+    --theme-text: #c2410c;
+    --canvas-bg: radial-gradient(circle at 12% 10%, rgba(249, 115, 22, 0.14), transparent 38%),
+      radial-gradient(circle at 88% 14%, rgba(244, 63, 94, 0.11), transparent 36%),
+      radial-gradient(circle at 76% 86%, rgba(139, 92, 246, 0.09), transparent 40%),
+      #fdf9f6;
+  }
+
+  :root[data-theme="angkasa"] {
+    --theme-primary: #4f46e5;
+    --theme-primary-hover: #4338ca;
+    --theme-secondary: #7c3aed;
+    --theme-tertiary: #06b6d4;
+    --theme-soft-bg: rgba(224, 231, 255, 0.6);
+    --theme-soft-border: rgba(129, 140, 248, 0.48);
+    --theme-text: #4338ca;
+    --canvas-bg: radial-gradient(circle at 12% 8%, rgba(99, 102, 241, 0.15), transparent 38%),
+      radial-gradient(circle at 88% 14%, rgba(139, 92, 246, 0.13), transparent 36%),
+      radial-gradient(circle at 76% 86%, rgba(6, 182, 212, 0.1), transparent 40%),
+      #f6f7fd;
+  }
+
+  :root[data-theme="delima"] {
+    --theme-primary: #e11d48;
+    --theme-primary-hover: #be123c;
+    --theme-secondary: #d97706;
+    --theme-tertiary: #0284c7;
+    --theme-soft-bg: rgba(255, 228, 230, 0.6);
+    --theme-soft-border: rgba(251, 113, 133, 0.48);
+    --theme-text: #be123c;
+    --canvas-bg: radial-gradient(circle at 12% 8%, rgba(244, 63, 94, 0.14), transparent 38%),
+      radial-gradient(circle at 88% 14%, rgba(245, 158, 11, 0.12), transparent 36%),
+      radial-gradient(circle at 76% 86%, rgba(14, 165, 233, 0.09), transparent 40%),
+      #fdf7f8;
+  }
+
+  :root.dark {
+    --theme-soft-bg: rgba(14, 165, 233, 0.14);
+    --theme-soft-border: rgba(56, 189, 248, 0.35);
+    --theme-text: #38bdf8;
+    --canvas-bg: radial-gradient(circle at 12% 8%, rgba(14, 165, 233, 0.14), transparent 40%),
+      radial-gradient(circle at 88% 14%, rgba(99, 102, 241, 0.13), transparent 38%),
+      radial-gradient(circle at 75% 88%, rgba(245, 158, 11, 0.08), transparent 42%),
+      #060b16;
+  }
+
+  :root.dark[data-theme="zamrud"] {
+    --theme-soft-bg: rgba(16, 185, 129, 0.14);
+    --theme-soft-border: rgba(52, 211, 153, 0.35);
+    --theme-text: #34d399;
+    --canvas-bg: radial-gradient(circle at 12% 8%, rgba(16, 185, 129, 0.15), transparent 40%),
+      radial-gradient(circle at 88% 14%, rgba(20, 184, 166, 0.12), transparent 38%),
+      radial-gradient(circle at 75% 88%, rgba(234, 179, 8, 0.08), transparent 42%),
+      #05110e;
+  }
+
+  :root.dark[data-theme="mentari"] {
+    --theme-soft-bg: rgba(249, 115, 22, 0.14);
+    --theme-soft-border: rgba(251, 146, 60, 0.38);
+    --theme-text: #fb923c;
+    --canvas-bg: radial-gradient(circle at 12% 8%, rgba(249, 115, 22, 0.15), transparent 40%),
+      radial-gradient(circle at 88% 14%, rgba(244, 63, 94, 0.13), transparent 38%),
+      radial-gradient(circle at 75% 88%, rgba(139, 92, 246, 0.09), transparent 42%),
+      #120a07;
+  }
+
+  :root.dark[data-theme="angkasa"] {
+    --theme-soft-bg: rgba(99, 102, 241, 0.16);
+    --theme-soft-border: rgba(129, 140, 248, 0.38);
+    --theme-text: #818cf8;
+    --canvas-bg: radial-gradient(circle at 12% 8%, rgba(99, 102, 241, 0.17), transparent 40%),
+      radial-gradient(circle at 88% 14%, rgba(139, 92, 246, 0.14), transparent 38%),
+      radial-gradient(circle at 75% 88%, rgba(6, 182, 212, 0.1), transparent 42%),
+      #08091a;
+  }
+
+  :root.dark[data-theme="delima"] {
+    --theme-soft-bg: rgba(244, 63, 94, 0.15);
+    --theme-soft-border: rgba(251, 113, 133, 0.38);
+    --theme-text: #fb7185;
+    --canvas-bg: radial-gradient(circle at 12% 8%, rgba(244, 63, 94, 0.16), transparent 40%),
+      radial-gradient(circle at 88% 14%, rgba(245, 158, 11, 0.12), transparent 38%),
+      radial-gradient(circle at 75% 88%, rgba(14, 165, 233, 0.09), transparent 42%),
+      #13080d;
+  }
+
+  body {
+    font-family: var(--font-sans);
+  }
+}
+
+.app-colorful-canvas {
+  background: var(--canvas-bg);
+}
+
+.theme-spectrum-bar {
+  background: linear-gradient(
+    90deg,
+    var(--theme-primary),
+    var(--theme-secondary),
+    var(--theme-tertiary)
+  );
+}
+
+.theme-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    var(--theme-primary),
+    var(--theme-secondary)
+  );
+}
+
+.theme-btn-primary {
+  background: linear-gradient(
+    135deg,
+    var(--theme-primary),
+    var(--theme-secondary)
+  );
+  color: #ffffff;
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), filter 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.theme-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: 0 6px 18px -6px var(--theme-primary);
+}
+
+.theme-btn-primary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.theme-accent-text {
+  color: var(--theme-text);
+}
+
+.theme-soft-surface {
+  background-color: var(--theme-soft-bg);
+  border-color: var(--theme-soft-border);
+}
+
+.font-stimulus {
+  font-family: var(--font-serif);
+}
+
+.font-mono-tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.avoid-page-break {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.page-break-before {
+  page-break-before: always;
+  break-before: page;
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}

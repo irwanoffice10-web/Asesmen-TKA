@@ -1,0 +1,8 @@
+{
+  "name": "AI Generator Asesmen & Simulasi TKA",
+  "description": "Portal generator soal TKA, Asesmen Nasional, dan Kurikulum Merdeka lengkap dengan kisi-kisi otomatis, simulasi CBT ala Pusmendik, kustomisasi kop surat resmi, dan ekspor PDF otomatis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
